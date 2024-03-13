@@ -1,4 +1,6 @@
 "use strict";
+//if there is pattern match works
+// import * as vscode from 'vscode';
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -27,72 +29,75 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
+// export function activate(context: vscode.ExtensionContext) {
+//     console.log('Congratulations, your extension "pattern-matcher" is now active!');
+//     // Register a command to be executed when the pattern is matched
+//     let disposable = vscode.commands.registerCommand('extension.activateCommand', () => {
+//         vscode.window.showInformationMessage('Command activated inside VS Code extension');
+//     });
+//     context.subscriptions.push(disposable);
+//     // Listen for changes in any text document
+//     vscode.workspace.onDidChangeTextDocument(event => {
+//         // Check if the active editor's document matches the document that was changed
+//         const activeEditor = vscode.window.activeTextEditor;
+//         if (activeEditor && activeEditor.document === event.document) {
+//             // Define the pattern to match
+//             // Updated pattern to specifically look for //find .
+//             const pattern = /\/\/generate\s*.*\./;
+//             // Check if the pattern is matched in the document
+//             const match = pattern.exec(event.document.getText());
+//             if (match) {
+//                 // Show an alert when the pattern is matched
+//                 vscode.window.showInformationMessage('Pattern matched!');
+//                 // Execute the command if the pattern is matched
+//                 vscode.commands.executeCommand('extension.activateCommand');
+//             }
+//         }
+//     });
+// }
+// export function deactivate() {}
+// response is fetched and shown 
 const vscode = __importStar(require("vscode"));
 const axios_1 = __importDefault(require("axios"));
+let patternMatched = false; // Flag to track if the pattern has been matched and sent
 function activate(context) {
-    let panel = undefined;
-    let disposable = vscode.commands.registerCommand('co-pilot.apiEndpoint', () => {
-        // Create or show the webview panel
-        if (!panel) {
-            panel = vscode.window.createWebviewPanel('apiResponse', 'API Response', vscode.ViewColumn.One, {});
-            // Handle panel disposal
-            panel.onDidDispose(() => {
-                panel = undefined;
-            });
-        }
-        // Get the active text editor
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-            // Get the selected text
-            const selectedText = editor.document.getText(editor.selection);
-            // Get API endpoint from configuration (update your extension's package.json)
-            const apiEndpoint = "http://127.0.0.1:5000/process_text";
-            if (apiEndpoint) {
-                try {
-                    console.log(selectedText);
-                    console.log(apiEndpoint);
-                    // Send selected text to the API
-                    axios_1.default.post(apiEndpoint, { text: selectedText })
-                        .then(response => {
-                        console.log(response.data["result"]);
-                        // Update the webview panel content
-                        if (panel) {
-                            panel.webview.html = getWebviewContent(response.data["result"]);
-                        }
-                    })
-                        .catch(error => {
-                        vscode.window.showErrorMessage(`Error sending code to API: ${error}`);
-                    });
-                }
-                catch (error) {
-                    vscode.window.showErrorMessage(`Error sending code to API: ${error}`);
-                }
-            }
-            else {
-                vscode.window.showErrorMessage('API endpoint not configured. Set "co-pilot.apiEndpoint" in your settings.');
-            }
-        }
-        else {
-            vscode.window.showWarningMessage('No active text editor.');
-        }
+    console.log('Congratulations, your extension "pattern-matcher" is now active!');
+    // Register a command to be executed when the pattern is matched
+    let disposable = vscode.commands.registerCommand('extension.activateCommand', () => {
+        vscode.window.showInformationMessage('Command activated inside VS Code extension');
     });
     context.subscriptions.push(disposable);
+    // Listen for changes in any text document
+    vscode.workspace.onDidChangeTextDocument(event => {
+        // Check if the active editor's document matches the document that was changed
+        const activeEditor = vscode.window.activeTextEditor;
+        if (activeEditor && activeEditor.document === event.document && !patternMatched) {
+            // Define the pattern to match
+            const pattern = /\/\/generate\s*.*\./;
+            // Check if the pattern is matched in the document
+            const match = pattern.exec(event.document.getText());
+            if (match) {
+                // Set the flag to true to indicate that the pattern has been matched and sent
+                patternMatched = true;
+                // Show an alert when the pattern is matched
+                vscode.window.showInformationMessage('Pattern matched!');
+                // Send the matched pattern to the Flask backend
+                axios_1.default.post('http://127.0.0.1:5000/process_text', { text: match[0] })
+                    .then(response => {
+                    // Display the response in the active text editor
+                    const edit = new vscode.WorkspaceEdit();
+                    const position = new vscode.Position(activeEditor.document.lineCount, 0);
+                    edit.insert(activeEditor.document.uri, position, response.data.result);
+                    vscode.workspace.applyEdit(edit);
+                })
+                    .catch(error => {
+                    console.error('Error sending pattern to Flask backend:', error);
+                });
+            }
+        }
+    });
 }
 exports.activate = activate;
-function getWebviewContent(apiResult) {
-    return `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>API Response</title>
-        </head>
-        <body>
-            <h1>API Response</h1>
-            <p>${apiResult}</p>
-        </body>
-        </html>`;
-}
-// this method is called when your extension is deactivated
 function deactivate() { }
 exports.deactivate = deactivate;
 //# sourceMappingURL=extension.js.map

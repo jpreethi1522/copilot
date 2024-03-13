@@ -1,6 +1,6 @@
-# co-pilot README
+# pilot README
 
-This is the README for your extension "co-pilot". After writing up a brief description, we recommend including the following sections.
+This is the README for your extension "pilot". After writing up a brief description, we recommend including the following sections.
 
 ## Features
 
