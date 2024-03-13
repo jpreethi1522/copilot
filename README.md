@@ -1,6 +1,6 @@
-# pilot README
+# piot README
 
-This is the README for your extension "pilot". After writing up a brief description, we recommend including the following sections.
+This is the README for your extension "piot". After writing up a brief description, we recommend including the following sections.
 
 ## Features
 
